@@ -1,6 +1,6 @@
 -- ================================================================
 -- 클린루프 (CleanLoop) 더미 데이터
--- 원본: issuse/schema.sql 의 DUMMY DATA 구간
+-- 원본: docs/issues/schema.sql 의 DUMMY DATA 구간
 -- last_done_at / completed_at 은 DATEADD로 "오늘 기준 N일 전"을 계산하므로
 -- 실행 시점과 무관하게 상태(due/soon/good)가 재현된다.
 -- ================================================================
