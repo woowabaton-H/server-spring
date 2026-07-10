@@ -129,3 +129,15 @@ INSERT INTO community_comments (id, post_id, user_id, body, created_at) VALUES
 INSERT INTO community_reactions (user_id, post_id, reaction_type) VALUES
     ('a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'helpful'),
     ('a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000005', 'save');
+
+-- 알림 2건. 욕실은 시드 기준 유일한 due 카테고리라 미확인 알림이 남아 있고,
+-- 주방은 완료 후 읽음 처리된 과거 알림이다. 목록 정렬(미확인 우선, 최신순)을 확인할 수 있다.
+INSERT INTO notifications (id, user_id, category_id, title, body, deep_link, is_read, created_at, read_at) VALUES
+    ('11000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001',
+     '이번 주에는 욕실만 챙겨도 충분해요',
+     '욕실 카테고리를 이번 주 안에 한 번 완료하면 다음 관리는 자동으로 다시 잡아둘게요.',
+     '/categories/b0000000-0000-0000-0000-000000000001', FALSE, DATEADD('DAY', -2, CURRENT_TIMESTAMP), NULL),
+    ('11000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000002',
+     '이번 주에는 주방만 챙겨도 충분해요',
+     '주방 카테고리를 이번 주 안에 한 번 완료하면 다음 관리는 자동으로 다시 잡아둘게요.',
+     '/categories/b0000000-0000-0000-0000-000000000002', TRUE, DATEADD('DAY', -7, CURRENT_TIMESTAMP), DATEADD('DAY', -6, CURRENT_TIMESTAMP));

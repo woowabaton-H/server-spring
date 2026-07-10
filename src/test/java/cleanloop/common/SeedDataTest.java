@@ -45,6 +45,19 @@ class SeedDataTest {
         assertThat(countOf("community_posts")).isEqualTo(7);
         assertThat(countOf("community_reactions")).isEqualTo(2);
         assertThat(countOf("community_comments")).isEqualTo(6);
+        assertThat(countOf("notifications")).isEqualTo(2);
+    }
+
+    /**
+     * 홈의 unreadNotificationCount가 시드 상태에서 1이 되도록 고정한다.
+     * 알림함이 비어 있으면 배지 동작을 확인할 수 없다.
+     */
+    @Test
+    void 미확인_알림이_한_건_시드된다() {
+        Integer unread = jdbcTemplate.queryForObject(
+                "select count(*) from notifications where is_read = false", Integer.class);
+
+        assertThat(unread).isEqualTo(1);
     }
 
     /**

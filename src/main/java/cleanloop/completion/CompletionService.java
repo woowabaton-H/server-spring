@@ -11,6 +11,7 @@ import cleanloop.common.page.CursorCodec;
 import cleanloop.completion.dto.CompleteCategoryRequest;
 import cleanloop.completion.dto.CompleteCategoryResponse;
 import cleanloop.completion.dto.CompletionLogResponse;
+import cleanloop.notification.NotificationService;
 import cleanloop.user.User;
 import cleanloop.user.UserService;
 import java.time.Clock;
@@ -32,17 +33,20 @@ public class CompletionService {
     private final CategoryRepository categoryRepository;
     private final CategoryStatusService statusService;
     private final UserService userService;
+    private final NotificationService notificationService;
     private final Clock clock;
 
     public CompletionService(CompletionLogRepository completionLogRepository,
                              CategoryRepository categoryRepository,
                              CategoryStatusService statusService,
                              UserService userService,
+                             NotificationService notificationService,
                              Clock clock) {
         this.completionLogRepository = completionLogRepository;
         this.categoryRepository = categoryRepository;
         this.statusService = statusService;
         this.userService = userService;
+        this.notificationService = notificationService;
         this.clock = clock;
     }
 
@@ -62,6 +66,10 @@ public class CompletionService {
                 UUID.randomUUID(), user.id(), category.id(), category.name(), completedAt, completedAt);
         completionLogRepository.insert(log);
         categoryRepository.updateLastDoneAt(category.id(), completedAt);
+        // backend-design 13.1-5. 방금 한 일을 챙기라고 남아 있는 알림은 여기서 정리한다.
+        // 읽은 시각은 completedAt이 아니라 지금이다. 지난 날짜로 소급 완료해도 알림은 방금 확인한 것이다.
+        notificationService.markCategoryNotificationsRead(
+                user.id(), category.id(), LocalDateTime.now(clock.withZone(user.timezone())));
 
         CleaningCategory updated = categoryRepository.findActiveByIdAndUserId(category.id(), user.id())
                 .orElseThrow(() -> new ApiException(ErrorCode.CATEGORY_NOT_FOUND));

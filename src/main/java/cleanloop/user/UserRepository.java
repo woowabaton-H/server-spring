@@ -1,6 +1,7 @@
 package cleanloop.user;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -25,6 +26,16 @@ public class UserRepository {
 
     public UserRepository(NamedParameterJdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    /** 알림 생성 스케줄러처럼 특정 사용자가 아닌 전체를 훑는 배치에서 쓴다. */
+    public List<User> findAll() {
+        String sql = """
+                select id, name, avatar_text, timezone, created_at, updated_at
+                from users
+                order by created_at
+                """;
+        return jdbc.query(sql, ROW_MAPPER);
     }
 
     public Optional<User> findById(UUID id) {

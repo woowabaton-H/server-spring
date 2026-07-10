@@ -8,6 +8,7 @@ import cleanloop.category.CleaningCategory;
 import cleanloop.category.dto.CategoryResponse;
 import cleanloop.completion.CompletionLogRepository;
 import cleanloop.completion.dto.CompletionLogResponse;
+import cleanloop.notification.NotificationService;
 import cleanloop.selection.SelectionService;
 import cleanloop.summary.dto.HomeResponse;
 import cleanloop.summary.dto.MeSummaryResponse;
@@ -42,17 +43,20 @@ public class SummaryService {
     private final CategoryStatusService statusService;
     private final UserService userService;
     private final SelectionService selectionService;
+    private final NotificationService notificationService;
 
     public SummaryService(CategoryRepository categoryRepository,
                           CompletionLogRepository completionLogRepository,
                           CategoryStatusService statusService,
                           UserService userService,
-                          SelectionService selectionService) {
+                          SelectionService selectionService,
+                          NotificationService notificationService) {
         this.categoryRepository = categoryRepository;
         this.completionLogRepository = completionLogRepository;
         this.statusService = statusService;
         this.userService = userService;
         this.selectionService = selectionService;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -80,6 +84,7 @@ public class SummaryService {
                 referenceDate,
                 messageOf(schedules),
                 monthlyCompletionCount(user.id(), referenceDate),
+                notificationService.countUnread(user.id()),
                 categoryResponses,
                 recentLogs(user.id(), timezone));
     }

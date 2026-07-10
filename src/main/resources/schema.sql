@@ -4,6 +4,7 @@
 -- ================================================================
 
 -- 재실행 대비 정리 (의존성 역순)
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS community_comments;
 DROP TABLE IF EXISTS community_reactions;
 DROP TABLE IF EXISTS community_posts;
@@ -173,3 +174,18 @@ CREATE TABLE community_reactions (
 );
 CREATE INDEX idx_community_reactions_user ON community_reactions(user_id, reaction_type, created_at DESC);
 CREATE INDEX idx_community_reactions_post ON community_reactions(post_id, reaction_type);
+
+-- backend-design.md 4.11
+-- 카테고리가 지워져도 알림 본문은 남아야 하므로 category_id는 nullable이다.
+CREATE TABLE notifications (
+    id           UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    user_id      UUID NOT NULL REFERENCES users(id),
+    category_id  UUID REFERENCES cleaning_categories(id),
+    title        VARCHAR(120) NOT NULL,
+    body         VARCHAR(500) NOT NULL,
+    deep_link    VARCHAR(200),
+    is_read      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at      TIMESTAMP
+);
+CREATE INDEX idx_notifications_user_read_created ON notifications(user_id, is_read, created_at DESC);
