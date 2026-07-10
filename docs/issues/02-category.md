@@ -35,7 +35,7 @@
 
 | 컬럼 | 타입 | 설명 |
 | --- | --- | --- |
-| key | varchar(50) pk | 프리셋 키 |
+| preset_key | varchar(50) pk | 프리셋 키. `key`는 H2 예약어라 컬럼명만 다르고, API 응답 필드는 `key`다 |
 | name | varchar(40) | 이름 |
 | icon | varchar(40) | 아이콘 키 |
 | cycle_days | int | 기본 주기 |

@@ -8,6 +8,9 @@
 -- 주의: last_done_at / completed_at은 DATEADD로 "오늘 기준 N일 전"을
 --       계산하므로, 실행 시점과 무관하게 상태(due/soon/good)가
 --       재현됩니다.
+-- H2 제약: category_presets의 PK 컬럼명은 KEY가 H2 예약어라 preset_key로 둡니다.
+--          (API 응답 필드명은 그대로 `key`입니다.)
+--          UUID 컬럼은 DEFAULT 절이 PRIMARY KEY보다 앞에 와야 합니다.
 -- ================================================================
 
 -- ----------------------------------------------------------------
@@ -28,7 +31,7 @@ DROP TABLE IF EXISTS users;
 -- ================================================================
 
 CREATE TABLE users (
-                       id           UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                       id           UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                        name         VARCHAR(40) NOT NULL,
                        avatar_text  VARCHAR(4),
                        timezone     VARCHAR(64) NOT NULL DEFAULT 'Asia/Seoul',
@@ -41,7 +44,7 @@ CREATE TABLE users (
 -- ================================================================
 
 CREATE TABLE category_presets (
-                                  key         VARCHAR(50) PRIMARY KEY,
+                                  preset_key  VARCHAR(50) PRIMARY KEY,
                                   name        VARCHAR(40) NOT NULL,
                                   icon        VARCHAR(40) NOT NULL,
                                   cycle_days  INT NOT NULL CHECK (cycle_days > 0),
@@ -52,9 +55,9 @@ CREATE TABLE category_presets (
 );
 
 CREATE TABLE cleaning_categories (
-                                     id           UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                     id           UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                      user_id      UUID NOT NULL REFERENCES users(id),
-                                     preset_key   VARCHAR(50) REFERENCES category_presets(key),
+                                     preset_key   VARCHAR(50) REFERENCES category_presets(preset_key),
                                      name         VARCHAR(40) NOT NULL,
                                      icon         VARCHAR(40) NOT NULL,
                                      cycle_days   INT NOT NULL CHECK (cycle_days > 0),
@@ -76,7 +79,7 @@ CREATE INDEX idx_categories_user_preset ON cleaning_categories(user_id, preset_k
 -- ================================================================
 
 CREATE TABLE completion_logs (
-                                 id            UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                 id            UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                  user_id       UUID NOT NULL REFERENCES users(id),
                                  category_id   UUID REFERENCES cleaning_categories(id),
                                  category_name VARCHAR(40) NOT NULL,
@@ -91,7 +94,7 @@ CREATE INDEX idx_completion_logs_category ON completion_logs(category_id, comple
 -- ================================================================
 
 CREATE TABLE selection_items (
-                                 id              UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                 id              UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                  slug            VARCHAR(80) NOT NULL UNIQUE,
                                  type            VARCHAR(30) NOT NULL,
                                  category        VARCHAR(40) NOT NULL,
@@ -113,7 +116,7 @@ CREATE INDEX idx_selection_items_status_category ON selection_items(status, cate
 CREATE INDEX idx_selection_items_type ON selection_items(type);
 
 CREATE TABLE provider_options (
-                                  id                 UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                  id                 UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                   selection_item_id  UUID NOT NULL REFERENCES selection_items(id),
                                   name               VARCHAR(80) NOT NULL,
                                   rating_text        VARCHAR(20),
@@ -126,7 +129,7 @@ CREATE TABLE provider_options (
 CREATE INDEX idx_provider_options_selection ON provider_options(selection_item_id, sort_order);
 
 CREATE TABLE saved_selections (
-                                  id                 UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                  id                 UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                   user_id            UUID NOT NULL REFERENCES users(id),
                                   selection_item_id  UUID NOT NULL REFERENCES selection_items(id),
                                   created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -139,7 +142,7 @@ CREATE INDEX idx_saved_selections_user_created ON saved_selections(user_id, crea
 -- ================================================================
 
 CREATE TABLE community_posts (
-                                 id               UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                 id               UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                  type             VARCHAR(20) NOT NULL,
                                  title            VARCHAR(160) NOT NULL,
                                  tag              VARCHAR(40),
@@ -156,7 +159,7 @@ CREATE INDEX idx_community_posts_type_status ON community_posts(type, status, cr
 CREATE INDEX idx_community_posts_popular ON community_posts(type, status, helpful_count DESC, saved_count DESC);
 
 CREATE TABLE community_reactions (
-                                     id             UUID PRIMARY KEY DEFAULT RANDOM_UUID(),
+                                     id             UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
                                      user_id        UUID NOT NULL REFERENCES users(id),
                                      post_id        UUID NOT NULL REFERENCES community_posts(id),
                                      reaction_type  VARCHAR(20) NOT NULL,
@@ -180,7 +183,7 @@ INSERT INTO users (id, name, avatar_text, timezone) VALUES
 -- ----------------------------------------------------------------
 -- 카테고리 프리셋 7종 (기본 생성 대상 6 + 반려동물 1)
 -- ----------------------------------------------------------------
-INSERT INTO category_presets (key, name, icon, cycle_days, note, sort_order, is_default, is_active) VALUES
+INSERT INTO category_presets (preset_key, name, icon, cycle_days, note, sort_order, is_default, is_active) VALUES
                                                                                                         ('bath',    '욕실',       'bath',    14, '물때와 습기만 잡아도 관리가 쉬워져요.',              1, TRUE,  TRUE),
                                                                                                         ('kitchen', '주방',       'kitchen', 7,  '배수구와 조리대 표면을 기준으로 잡아요.',            2, TRUE,  TRUE),
                                                                                                         ('laundry', '세탁/침구',  'laundry', 14, '침구와 수건을 같은 리듬으로 관리해요.',              3, TRUE,  TRUE),
