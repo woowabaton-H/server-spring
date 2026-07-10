@@ -1,0 +1,59 @@
+package cleanloop.common;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import cleanloop.common.user.CurrentUserProvider;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+/**
+ * schema.sql + data.sql이 부팅 시 실제로 적재되는지 확인한다.
+ * 도메인 구현이 기대하는 시드 데이터의 최소 계약이다.
+ */
+@SpringBootTest
+class SeedDataTest {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private CurrentUserProvider currentUserProvider;
+
+    @Test
+    void 데모_사용자가_시드된다() {
+        UUID userId = currentUserProvider.currentUserId();
+
+        String name = jdbcTemplate.queryForObject(
+                "select name from users where id = ?", String.class, userId);
+
+        assertThat(name).isEqualTo("보송");
+    }
+
+    @Test
+    void 각_테이블에_시드_데이터가_적재된다() {
+        assertThat(countOf("users")).isEqualTo(1);
+        assertThat(countOf("category_presets")).isEqualTo(7);
+        assertThat(countOf("cleaning_categories")).isEqualTo(6);
+        assertThat(countOf("completion_logs")).isEqualTo(10);
+        assertThat(countOf("selection_items")).isEqualTo(7);
+        assertThat(countOf("provider_options")).isEqualTo(3);
+        assertThat(countOf("saved_selections")).isEqualTo(1);
+        assertThat(countOf("community_posts")).isEqualTo(7);
+        assertThat(countOf("community_reactions")).isEqualTo(2);
+    }
+
+    @Test
+    void 기본_생성_대상_프리셋은_여섯개다() {
+        Integer defaults = jdbcTemplate.queryForObject(
+                "select count(*) from category_presets where is_default = true", Integer.class);
+
+        assertThat(defaults).isEqualTo(6);
+    }
+
+    private Integer countOf(String table) {
+        return jdbcTemplate.queryForObject("select count(*) from " + table, Integer.class);
+    }
+}
