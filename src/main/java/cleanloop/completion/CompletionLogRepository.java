@@ -76,6 +76,46 @@ public class CompletionLogRepository {
         return new ArrayList<>(jdbc.query(sql.toString(), params, ROW_MAPPER));
     }
 
+    public List<CompletionLog> findRecent(UUID userId, int limit) {
+        String sql = """
+                select %s from completion_logs
+                where user_id = :userId
+                order by completed_at desc, id desc
+                limit :limit
+                """.formatted(COLUMNS);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userId", userId)
+                .addValue("limit", limit);
+        return jdbc.query(sql, params, ROW_MAPPER);
+    }
+
+    /** [from, to) 구간의 완료 기록 수. */
+    public int countBetween(UUID userId, LocalDateTime from, LocalDateTime to) {
+        String sql = """
+                select count(*) from completion_logs
+                where user_id = :userId and completed_at >= :from and completed_at < :to
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userId", userId)
+                .addValue("from", from)
+                .addValue("to", to);
+        Integer count = jdbc.queryForObject(sql, params, Integer.class);
+        return count != null ? count : 0;
+    }
+
+    /** [from, to) 구간의 완료 시각들. 주 단위 집계는 사용자 타임존이 필요해 애플리케이션에서 버킷팅한다. */
+    public List<LocalDateTime> findCompletedAtBetween(UUID userId, LocalDateTime from, LocalDateTime to) {
+        String sql = """
+                select completed_at from completion_logs
+                where user_id = :userId and completed_at >= :from and completed_at < :to
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userId", userId)
+                .addValue("from", from)
+                .addValue("to", to);
+        return jdbc.query(sql, params, (rs, rowNum) -> rs.getTimestamp("completed_at").toLocalDateTime());
+    }
+
     public record Cursor(LocalDateTime completedAt, UUID id) {
     }
 }

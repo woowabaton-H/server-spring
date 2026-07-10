@@ -95,6 +95,14 @@ public class CategoryRepository {
         jdbc.update(sql, params);
     }
 
+    public int countActiveByUserId(UUID userId) {
+        String sql = """
+                select count(*) from cleaning_categories
+                where user_id = :userId and is_active = true
+                """;
+        return count(sql, new MapSqlParameterSource("userId", userId));
+    }
+
     public boolean existsActiveByName(UUID userId, String name) {
         String sql = """
                 select count(*) from cleaning_categories

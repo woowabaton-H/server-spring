@@ -31,12 +31,23 @@ public class CategoryStatusService {
     }
 
     public CategorySchedule scheduleOf(LocalDateTime lastDoneAt, int cycleDays, ZoneId timezone) {
-        ZonedDateTime nextDue = lastDoneAt.plusDays(cycleDays).atZone(timezone);
-        ZonedDateTime now = ZonedDateTime.now(clock.withZone(timezone));
+        return scheduleOf(lastDoneAt, cycleDays, timezone, now(timezone));
+    }
 
-        int daysUntilNext = ceilDays(Duration.between(now, nextDue));
+    /**
+     * 기준 시각을 직접 주는 형태. 홈의 today 파라미터처럼 "오늘"을 옮겨 계산할 때 쓴다.
+     */
+    public CategorySchedule scheduleOf(LocalDateTime lastDoneAt, int cycleDays, ZoneId timezone,
+                                       ZonedDateTime reference) {
+        ZonedDateTime nextDue = lastDoneAt.plusDays(cycleDays).atZone(timezone);
+
+        int daysUntilNext = ceilDays(Duration.between(reference, nextDue));
         StatusCode code = codeOf(daysUntilNext);
         return new CategorySchedule(nextDue.toOffsetDateTime(), code, labelOf(code, daysUntilNext), daysUntilNext);
+    }
+
+    public ZonedDateTime now(ZoneId timezone) {
+        return ZonedDateTime.now(clock.withZone(timezone));
     }
 
     /**
