@@ -27,6 +27,7 @@ public class CommunityPostRepository {
             rs.getString("title"),
             rs.getString("tag"),
             rs.getString("body"),
+            rs.getString("image_url"),
             rs.getObject("author_id", UUID.class),
             rs.getInt("helpful_count"),
             rs.getInt("comments_count"),
@@ -38,7 +39,7 @@ public class CommunityPostRepository {
     );
 
     private static final String COLUMNS = """
-            id, type, title, tag, body, author_id, helpful_count, comments_count,
+            id, type, title, tag, body, image_url, author_id, helpful_count, comments_count,
             answers_count, saved_count, status, is_recommended, created_at
             """;
 
@@ -123,8 +124,8 @@ public class CommunityPostRepository {
 
     public void insert(UUID id, PostType type, String title, String tag, String body, UUID authorId) {
         String sql = """
-                insert into community_posts (id, type, title, tag, body, author_id, status)
-                values (:id, :type, :title, :tag, :body, :authorId, :status)
+                insert into community_posts (id, type, title, tag, body, image_url, author_id, status)
+                values (:id, :type, :title, :tag, :body, null, :authorId, :status)
                 """;
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("id", id)

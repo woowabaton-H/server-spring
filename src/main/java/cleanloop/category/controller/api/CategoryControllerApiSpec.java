@@ -215,4 +215,29 @@ public interface CategoryControllerApiSpec {
     })
     ApiResponse<CategoryResponse> update(@PathVariable UUID categoryId,
                                          @Valid @RequestBody UpdateCategoryRequest request);
+
+    @Operation(
+            summary = "카테고리 주기 끄기",
+            description = """
+                    사용자가 더 이상 관리하지 않을 카테고리를 비활성화한다.
+                    완료 기록과 알림 본문은 유지하고, 홈/마이의 활성 카테고리 목록에서만 제외한다.
+                    같은 프리셋은 이후 다시 추가할 수 있다.
+                    """
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "204",
+                    description = "카테고리 비활성화 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "카테고리를 찾을 수 없음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증되지 않은 사용자"
+            )
+    })
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void deactivate(@PathVariable UUID categoryId);
 }

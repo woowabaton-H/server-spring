@@ -23,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * docs/issues/05-selection.md 완료 기준 검증.
- * 시드: 공개 셀렉션 9종, 서비스 셀렉션에 제공업체 3곳, downy-odor는 저장된 상태.
+ * 시드: 기본 셀렉션 9종 + 문서 기반 확장 셀렉션 24종, downy-odor는 저장된 상태.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,6 +31,8 @@ import tools.jackson.databind.ObjectMapper;
 class SelectionApiTest {
 
     private static final String PROVIDER_ID = "d0000000-0000-0000-0000-000000000001";
+    private static final int TOTAL_SELECTION_COUNT = 33;
+    private static final int SERVICE_SELECTION_COUNT = 8;
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,9 +42,9 @@ class SelectionApiTest {
 
     @Test
     void 공개된_셀렉션을_모두_반환한다() throws Exception {
-        mockMvc.perform(get("/api/v1/selections"))
+        mockMvc.perform(get("/api/v1/selections").param("limit", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", Matchers.hasSize(9)))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(TOTAL_SELECTION_COUNT)))
                 .andExpect(jsonPath("$.meta.nextCursor").doesNotExist());
     }
 
@@ -90,14 +92,14 @@ class SelectionApiTest {
 
     @Test
     void 카테고리_전체를_요청하면_모든_항목을_반환한다() throws Exception {
-        mockMvc.perform(get("/api/v1/selections").param("category", "전체"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(9)));
+        mockMvc.perform(get("/api/v1/selections").param("category", "전체").param("limit", "100"))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(TOTAL_SELECTION_COUNT)));
     }
 
     @Test
     void type으로_필터한다() throws Exception {
         mockMvc.perform(get("/api/v1/selections").param("type", "service"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(3)))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(SERVICE_SELECTION_COUNT)))
                 .andExpect(jsonPath("$.data[*].type").value(Matchers.everyItem(Matchers.is("service"))));
     }
 
@@ -110,6 +112,16 @@ class SelectionApiTest {
                 .andExpect(jsonPath("$.data[0].ratingText").value("4.8"))
                 .andExpect(jsonPath("$.data[0].reviewCountText").value("후기 2,184개"))
                 .andExpect(jsonPath("$.data[0].tags").value(Matchers.contains("세탁 냄새", "수건", "운동복")));
+    }
+
+    @Test
+    void 문서_기반_셀렉션에도_서버_이미지_url이_담긴다() throws Exception {
+        mockMvc.perform(get("/api/v1/selections/frosch-washer-cleaner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("프로쉬 세탁조 클리너 250g"))
+                .andExpect(jsonPath("$.data.imageUrl")
+                        .value("/cleanloop/images/selection-frosch-washer-cleaner.png"))
+                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("세탁조클리너", "세탁기청소", "냄새제거")));
     }
 
     /** 카드에 필요한 정보라 목록에도 담지만, 판단 근거인 notice와 checks는 상세 전용이다. */
@@ -317,7 +329,7 @@ class SelectionApiTest {
             cursor = next.isNull() || next.isMissingNode() ? null : next.asText();
         } while (cursor != null);
 
-        assertThat(collected).hasSize(9).doesNotHaveDuplicates();
+        assertThat(collected).hasSize(TOTAL_SELECTION_COUNT).doesNotHaveDuplicates();
         assertThat(collected.get(0)).isEqualTo("downy-odor");
     }
 

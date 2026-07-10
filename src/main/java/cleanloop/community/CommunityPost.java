@@ -13,6 +13,7 @@ public record CommunityPost(
         String title,
         String tag,
         String body,
+        String imageUrl,
         UUID authorId,
         int helpfulCount,
         int commentsCount,

@@ -38,13 +38,13 @@ class SeedDataTest {
         assertThat(countOf("category_presets")).isEqualTo(8);
         assertThat(countOf("cleaning_categories")).isEqualTo(6);
         assertThat(countOf("completion_logs")).isEqualTo(10);
-        assertThat(countOf("selection_items")).isEqualTo(9);
-        assertThat(countOf("selection_attributes")).isEqualTo(37);
-        assertThat(countOf("provider_options")).isEqualTo(3);
+        assertThat(countOf("selection_items")).isEqualTo(33);
+        assertThat(countOf("selection_attributes")).isEqualTo(133);
+        assertThat(countOf("provider_options")).isEqualTo(8);
         assertThat(countOf("saved_selections")).isEqualTo(1);
-        assertThat(countOf("community_posts")).isEqualTo(7);
+        assertThat(countOf("community_posts")).isEqualTo(31);
         assertThat(countOf("community_reactions")).isEqualTo(2);
-        assertThat(countOf("community_comments")).isEqualTo(12);
+        assertThat(countOf("community_comments")).isEqualTo(44);
         assertThat(countOf("notifications")).isEqualTo(2);
     }
 

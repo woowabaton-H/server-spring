@@ -21,7 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * 댓글/답변 조회·작성과 글 작성 검증.
- * 시드: 클라이언트 프로토타입의 tips 4건에 댓글 2건씩, qa 2건에 답변 2건씩.
+ * 시드: 클라이언트 프로토타입 커뮤니티 글과 문서 기반 Q&A/팁을 함께 적재한다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,6 +31,7 @@ class CommunityCommentApiTest {
     private static final String TIP1 = "e0000000-0000-0000-0000-000000000001";
     private static final String QA1 = "e0000000-0000-0000-0000-000000000005";
     private static final String MISSING = "e0000000-0000-0000-0000-0000000000ff";
+    private static final int SEEDED_QA_COUNT = 19;
 
     @Autowired
     private MockMvc mockMvc;
@@ -247,9 +248,9 @@ class CommunityCommentApiTest {
 
         // 인기 점수 0이라 목록 마지막에 붙는다
         mockMvc.perform(get("/api/v1/community/posts").param("type", "qa"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(4)))
-                .andExpect(jsonPath("$.data[3].title").value("새 질문입니다"))
-                .andExpect(jsonPath("$.data[3].isPopular").value(false));
+                .andExpect(jsonPath("$.data", Matchers.hasSize(SEEDED_QA_COUNT + 1)))
+                .andExpect(jsonPath("$.data[?(@.title == '새 질문입니다')].isPopular")
+                        .value(Matchers.hasItem(false)));
     }
 
     @Test

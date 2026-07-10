@@ -1,5 +1,6 @@
 package cleanloop.category;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -209,6 +210,42 @@ class CategoryApiTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.cycleDays").value(21));
+    }
+
+    @Test
+    void 카테고리를_비활성화하면_활성_목록에서_제외된다() throws Exception {
+        mockMvc.perform(delete("/api/v1/categories/" + BATH_ID))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", Matchers.hasSize(5)))
+                .andExpect(jsonPath("$.data[*].name", Matchers.not(Matchers.hasItem("욕실"))));
+    }
+
+    @Test
+    void 비활성화한_프리셋은_다시_생성할_수_있다() throws Exception {
+        mockMvc.perform(delete("/api/v1/categories/" + BATH_ID))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"presetKey": "bath"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.name").value("욕실"));
+
+        mockMvc.perform(get("/api/v1/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", Matchers.hasSize(6)));
+    }
+
+    @Test
+    void 없는_카테고리를_비활성화하면_404다() throws Exception {
+        mockMvc.perform(delete("/api/v1/categories/b0000000-0000-0000-0000-0000000000ff"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("CATEGORY_NOT_FOUND"));
     }
 
     @Test

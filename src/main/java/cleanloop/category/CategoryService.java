@@ -88,6 +88,13 @@ public class CategoryService {
         return toResponse(findOwned(categoryId, user.id()), user);
     }
 
+    @Transactional
+    public void deactivate(UUID categoryId) {
+        User user = userService.getMe();
+        findOwned(categoryId, user.id());
+        categoryRepository.deactivate(categoryId);
+    }
+
     /**
      * 상태와 nextDueAt은 저장하지 않고 사용자 타임존 기준으로 매 조회 시 계산한다.
      */

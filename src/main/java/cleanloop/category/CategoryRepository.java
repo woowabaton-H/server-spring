@@ -182,6 +182,15 @@ public class CategoryRepository {
         jdbc.update(sql, params);
     }
 
+    public void deactivate(UUID id) {
+        String sql = """
+                update cleaning_categories
+                set is_active = false, updated_at = current_timestamp
+                where id = :id
+                """;
+        jdbc.update(sql, new MapSqlParameterSource("id", id));
+    }
+
     private int count(String sql, MapSqlParameterSource params) {
         Integer result = jdbc.queryForObject(sql, params, Integer.class);
         return result != null ? result : 0;

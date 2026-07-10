@@ -139,6 +139,7 @@ CREATE TABLE community_posts (
     title            VARCHAR(160) NOT NULL,
     tag              VARCHAR(40),
     body             VARCHAR(2000) NOT NULL,
+    image_url        VARCHAR(500),
     -- 운영이 심은 콘텐츠는 작성자가 없으므로 nullable이다.
     author_id        UUID REFERENCES users(id),
     helpful_count    INT NOT NULL DEFAULT 0,

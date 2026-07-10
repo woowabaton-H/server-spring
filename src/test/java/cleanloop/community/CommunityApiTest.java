@@ -25,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
  * 시드 인기 점수(helpful + saved):
  *   tips: tip1 192, tip3 176, tip2 147, tip4 129 -> 상위 3 문턱값 147
  *   qa:   qa1 110, qa2 110, qa3 49               -> 상위 3 문턱값 49
+ *   문서 기반 tips 8건, qa 16건은 기존 인기 순서를 흔들지 않도록 낮은 점수로 추가된다.
  * 시드 반응: tip1에 도움됨, qa1에 저장.
  */
 @SpringBootTest
@@ -37,6 +38,8 @@ class CommunityApiTest {
     private static final String TIP4 = "e0000000-0000-0000-0000-000000000004";
     private static final String QA1 = "e0000000-0000-0000-0000-000000000005";
     private static final String MISSING = "e0000000-0000-0000-0000-0000000000ff";
+    private static final int TIPS_COUNT = 12;
+    private static final int QA_COUNT = 19;
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,11 +51,11 @@ class CommunityApiTest {
     void type으로_글을_필터한다() throws Exception {
         mockMvc.perform(get("/api/v1/community/posts").param("type", "tips"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", Matchers.hasSize(4)))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(TIPS_COUNT)))
                 .andExpect(jsonPath("$.data[*].type").value(Matchers.everyItem(Matchers.is("tips"))));
 
         mockMvc.perform(get("/api/v1/community/posts").param("type", "qa"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(3)));
+                .andExpect(jsonPath("$.data", Matchers.hasSize(QA_COUNT)));
     }
 
     @Test
@@ -73,8 +76,8 @@ class CommunityApiTest {
     @Test
     void tag로_글을_좁힌다() throws Exception {
         mockMvc.perform(get("/api/v1/community/posts").param("type", "tips").param("tag", "욕실"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(1)))
-                .andExpect(jsonPath("$.data[0].id").value(TIP1));
+                .andExpect(jsonPath("$.data[*].id").value(Matchers.hasItem(TIP1)))
+                .andExpect(jsonPath("$.data[*].tag").value(Matchers.everyItem(Matchers.is("욕실"))));
     }
 
     /**
@@ -102,7 +105,7 @@ class CommunityApiTest {
         for (JsonNode post : posts) {
             scores.add(post.get("helpfulCount").asInt() + post.get("savedCount").asInt());
         }
-        assertThat(scores).containsExactly(192, 176, 147, 129);
+        assertThat(scores.subList(0, 4)).containsExactly(192, 176, 147, 129);
     }
 
     @Test
@@ -124,6 +127,19 @@ class CommunityApiTest {
         mockMvc.perform(get("/api/v1/community/posts").param("type", "qa"))
                 .andExpect(jsonPath("$.data[0].id").value(QA1))
                 .andExpect(jsonPath("$.data[0].isSaved").value(true));
+    }
+
+    @Test
+    void 커뮤니티_목록과_상세에_이미지_url이_담긴다() throws Exception {
+        String docQa = "e1000000-0000-0000-0000-000000000101";
+
+        mockMvc.perform(get("/api/v1/community/posts").param("type", "qa").param("limit", "100"))
+                .andExpect(jsonPath("$.data[?(@.id == '%s')].imageUrl".formatted(docQa))
+                        .value(Matchers.hasItem("/cleanloop/images/qna-washer-gasket-mold.png")));
+
+        mockMvc.perform(get("/api/v1/community/posts/" + docQa))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.imageUrl").value("/cleanloop/images/qna-washer-gasket-mold.png"));
     }
 
     @Test
@@ -290,7 +306,7 @@ class CommunityApiTest {
             cursor = next.isNull() || next.isMissingNode() ? null : next.asText();
         } while (cursor != null);
 
-        assertThat(collected).hasSize(4).doesNotHaveDuplicates();
+        assertThat(collected).hasSize(TIPS_COUNT).doesNotHaveDuplicates();
         assertThat(collected.get(0)).isEqualTo(TIP1);
     }
 

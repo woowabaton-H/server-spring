@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,5 +44,11 @@ public class CategoryController implements CategoryControllerApiSpec {
     public ApiResponse<CategoryResponse> update(@PathVariable UUID categoryId,
                                                 @Valid @RequestBody UpdateCategoryRequest request) {
         return ApiResponse.of(categoryService.update(categoryId, request));
+    }
+
+    @DeleteMapping("/{categoryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivate(@PathVariable UUID categoryId) {
+        categoryService.deactivate(categoryId);
     }
 }
