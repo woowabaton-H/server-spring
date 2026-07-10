@@ -63,6 +63,38 @@ public class CategoryRepository {
         }
     }
 
+    /**
+     * 완료 처리처럼 읽은 값을 근거로 갱신하는 흐름에서 쓴다.
+     * 연속 클릭 시 같은 카테고리를 동시에 갱신하지 않도록 행을 잠근다.
+     */
+    public Optional<CleaningCategory> findActiveByIdAndUserIdForUpdate(UUID id, UUID userId) {
+        String sql = """
+                select %s from cleaning_categories
+                where id = :id and user_id = :userId and is_active = true
+                for update
+                """.formatted(COLUMNS);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("userId", userId);
+        try {
+            return Optional.ofNullable(jdbc.queryForObject(sql, params, ROW_MAPPER));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    public void updateLastDoneAt(UUID id, LocalDateTime lastDoneAt) {
+        String sql = """
+                update cleaning_categories
+                set last_done_at = :lastDoneAt, updated_at = current_timestamp
+                where id = :id
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("lastDoneAt", lastDoneAt);
+        jdbc.update(sql, params);
+    }
+
     public boolean existsActiveByName(UUID userId, String name) {
         String sql = """
                 select count(*) from cleaning_categories
