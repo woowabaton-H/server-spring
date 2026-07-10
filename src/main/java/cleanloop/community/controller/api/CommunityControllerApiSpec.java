@@ -8,13 +8,18 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import cleanloop.common.page.PageRequests;
 import cleanloop.common.response.ApiResponse;
+import cleanloop.community.dto.CommentResponse;
 import cleanloop.community.dto.CommunityPostDetailResponse;
 import cleanloop.community.dto.CommunityPostSummaryResponse;
+import cleanloop.community.dto.CreateCommentRequest;
+import cleanloop.community.dto.CreatePostRequest;
 import cleanloop.community.dto.HelpfulResponse;
 import cleanloop.community.dto.SavePostResponse;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -94,6 +99,135 @@ public interface CommunityControllerApiSpec {
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit);
+
+    @Operation(
+            summary = "커뮤니티 글 작성",
+            description = """
+                    새 커뮤니티 글을 작성한다.
+
+                    **사용 페이지:**
+                    - 커뮤니티 탭: 글쓰기 버튼 클릭 후 작성 폼 제출
+
+                    **플로우:**
+                    1. 커뮤니티 탭 → 글쓰기 버튼
+                    2. type(tips|qa), title, tag, body 입력
+                    3. POST /community/posts 호출
+                    4. 생성된 글 상세를 응답으로 받아 상세 페이지로 이동
+
+                    제약:
+                    - type은 tips 또는 qa
+                    - title 1~160자, body 1~2000자, tag는 선택(40자 이하)
+                    - 새 글의 도움됨/저장/댓글 수는 모두 0에서 시작한다
+                    """
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "201",
+                    description = "글 작성 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "허용되지 않는 type"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "422",
+                    description = "필수 값 누락 또는 길이 초과"
+            )
+    })
+    @ResponseStatus(HttpStatus.CREATED)
+    ApiResponse<CommunityPostDetailResponse> createPost(@Valid @RequestBody CreatePostRequest request);
+
+    @Operation(
+            summary = "댓글/답변 목록 조회",
+            description = """
+                    글에 달린 댓글(tips) 또는 답변(qa) 목록을 조회한다.
+
+                    **사용 페이지:**
+                    - 커뮤니티 글 상세: 본문 아래 댓글/답변 영역
+
+                    **플로우:**
+                    1. 글 상세 진입 또는 댓글 영역 스크롤
+                    2. GET /community/posts/{postId}/comments (선택: cursor, limit)
+                    3. 대화 흐름대로 오래된 순으로 수신
+                    4. authorIsMe로 내가 쓴 댓글을 구분해 표시
+
+                    정렬:
+                    - createdAt 오름차순 (다른 목록과 반대 방향)
+                    """
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "댓글 목록 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "댓글 목록",
+                                    value = """
+                                            {
+                                              "data": [
+                                                {
+                                                  "id": "f0000000-0000-0000-0000-000000000001",
+                                                  "postId": "e0000000-0000-0000-0000-000000000001",
+                                                  "authorName": "보송",
+                                                  "authorIsMe": true,
+                                                  "body": "스퀴지 하나 샀는데 확실히 물때가 덜 생겨요.",
+                                                  "createdAt": "2026-07-10T12:00:00+09:00"
+                                                }
+                                              ],
+                                              "meta": {
+                                                "nextCursor": null
+                                              }
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "글을 찾을 수 없음"
+            )
+    })
+    ApiResponse.ListApiResponse<CommentResponse> findComments(
+            @PathVariable UUID postId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit);
+
+    @Operation(
+            summary = "댓글/답변 작성",
+            description = """
+                    글에 댓글(tips) 또는 답변(qa)을 남긴다.
+
+                    **사용 페이지:**
+                    - 커뮤니티 글 상세: 댓글 입력창
+
+                    **플로우:**
+                    1. 글 상세 → 댓글 입력 후 등록
+                    2. POST /community/posts/{postId}/comments
+                    3. 생성된 댓글을 응답으로 받아 목록에 덧붙임
+
+                    집계:
+                    - tips 글이면 commentsCount가, qa 글이면 answersCount가 1 증가한다
+                    - 댓글 삽입과 카운터 증가는 한 트랜잭션으로 처리한다
+                    """
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "201",
+                    description = "댓글 작성 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "글을 찾을 수 없음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "422",
+                    description = "body 누락 또는 길이 초과"
+            )
+    })
+    @ResponseStatus(HttpStatus.CREATED)
+    ApiResponse<CommentResponse> addComment(@PathVariable UUID postId,
+                                            @Valid @RequestBody CreateCommentRequest request);
 
     @Operation(
             summary = "커뮤니티 글 상세 조회",

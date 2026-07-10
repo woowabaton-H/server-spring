@@ -43,6 +43,23 @@ class SeedDataTest {
         assertThat(countOf("saved_selections")).isEqualTo(1);
         assertThat(countOf("community_posts")).isEqualTo(7);
         assertThat(countOf("community_reactions")).isEqualTo(2);
+        assertThat(countOf("community_comments")).isEqualTo(6);
+    }
+
+    /**
+     * 댓글 조회 API가 생긴 뒤로는 집계 컬럼이 실제 행 수와 어긋나면 안 된다.
+     * tips 글은 comments_count로, qa 글은 answers_count로 센다.
+     */
+    @Test
+    void 댓글_집계_컬럼은_실제_행_수와_일치한다() {
+        Integer mismatched = jdbcTemplate.queryForObject("""
+                select count(*) from community_posts p
+                where (case when p.type = 'tips' then p.comments_count else p.answers_count end)
+                      <> (select count(*) from community_comments c
+                          where c.post_id = p.id and c.status = 'published')
+                """, Integer.class);
+
+        assertThat(mismatched).isZero();
     }
 
     @Test

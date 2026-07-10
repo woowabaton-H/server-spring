@@ -4,6 +4,7 @@
 -- ================================================================
 
 -- 재실행 대비 정리 (의존성 역순)
+DROP TABLE IF EXISTS community_comments;
 DROP TABLE IF EXISTS community_reactions;
 DROP TABLE IF EXISTS community_posts;
 DROP TABLE IF EXISTS saved_selections;
@@ -118,6 +119,8 @@ CREATE TABLE community_posts (
     title            VARCHAR(160) NOT NULL,
     tag              VARCHAR(40),
     body             VARCHAR(2000) NOT NULL,
+    -- 운영이 심은 콘텐츠는 작성자가 없으므로 nullable이다.
+    author_id        UUID REFERENCES users(id),
     helpful_count    INT NOT NULL DEFAULT 0,
     comments_count   INT NOT NULL DEFAULT 0,
     answers_count    INT NOT NULL DEFAULT 0,
@@ -128,6 +131,18 @@ CREATE TABLE community_posts (
 );
 CREATE INDEX idx_community_posts_type_status ON community_posts(type, status, created_at DESC);
 CREATE INDEX idx_community_posts_popular ON community_posts(type, status, helpful_count DESC, saved_count DESC);
+
+-- tips 글에서는 댓글로, qa 글에서는 답변으로 표시한다. 저장 구조는 같다.
+CREATE TABLE community_comments (
+    id          UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    post_id     UUID NOT NULL REFERENCES community_posts(id),
+    user_id     UUID NOT NULL REFERENCES users(id),
+    body        VARCHAR(1000) NOT NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'published',
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_community_comments_post_created ON community_comments(post_id, created_at);
 
 CREATE TABLE community_reactions (
     id             UUID DEFAULT RANDOM_UUID() PRIMARY KEY,

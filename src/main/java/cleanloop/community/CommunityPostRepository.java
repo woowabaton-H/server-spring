@@ -27,6 +27,7 @@ public class CommunityPostRepository {
             rs.getString("title"),
             rs.getString("tag"),
             rs.getString("body"),
+            rs.getObject("author_id", UUID.class),
             rs.getInt("helpful_count"),
             rs.getInt("comments_count"),
             rs.getInt("answers_count"),
@@ -37,7 +38,7 @@ public class CommunityPostRepository {
     );
 
     private static final String COLUMNS = """
-            id, type, title, tag, body, helpful_count, comments_count,
+            id, type, title, tag, body, author_id, helpful_count, comments_count,
             answers_count, saved_count, status, is_recommended, created_at
             """;
 
@@ -118,6 +119,32 @@ public class CommunityPostRepository {
                 .addValue("offset", POPULAR_TOP_N - 1);
 
         return jdbc.query(sql, params, (rs, rowNum) -> rs.getInt("score")).stream().findFirst();
+    }
+
+    public void insert(UUID id, PostType type, String title, String tag, String body, UUID authorId) {
+        String sql = """
+                insert into community_posts (id, type, title, tag, body, author_id, status)
+                values (:id, :type, :title, :tag, :body, :authorId, :status)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("type", type.code())
+                .addValue("title", title)
+                .addValue("tag", tag)
+                .addValue("body", body)
+                .addValue("authorId", authorId)
+                .addValue("status", PUBLISHED);
+        jdbc.update(sql, params);
+    }
+
+    /**
+     * 댓글이 실제로 삽입된 경우에만 호출한다.
+     * tips 글이면 comments_count를, qa 글이면 answers_count를 올린다.
+     */
+    public void incrementCommentCounter(UUID postId, PostType type) {
+        String column = type.commentCounterColumn();
+        String sql = "update community_posts set %s = %s + 1 where id = :postId".formatted(column, column);
+        jdbc.update(sql, new MapSqlParameterSource("postId", postId));
     }
 
     /**

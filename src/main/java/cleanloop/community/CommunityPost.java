@@ -5,6 +5,7 @@ import java.util.UUID;
 
 /**
  * 커뮤니티 글. helpfulCount와 savedCount는 반응 테이블의 집계값을 컬럼에 들고 있는다.
+ * authorId는 운영이 심은 콘텐츠에서 null이다.
  */
 public record CommunityPost(
         UUID id,
@@ -12,6 +13,7 @@ public record CommunityPost(
         String title,
         String tag,
         String body,
+        UUID authorId,
         int helpfulCount,
         int commentsCount,
         int answersCount,
@@ -24,5 +26,9 @@ public record CommunityPost(
     /** MVP 인기 점수. */
     public int popularScore() {
         return helpfulCount + savedCount;
+    }
+
+    public PostType postType() {
+        return PostType.from(type);
     }
 }
