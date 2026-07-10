@@ -2,6 +2,7 @@ package cleanloop.completion;
 
 import cleanloop.common.page.PageRequests;
 import cleanloop.common.response.ApiResponse;
+import cleanloop.completion.controller.api.CompletionControllerApiSpec;
 import cleanloop.completion.dto.CompleteCategoryRequest;
 import cleanloop.completion.dto.CompleteCategoryResponse;
 import cleanloop.completion.dto.CompletionLogResponse;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class CompletionController {
+public class CompletionController implements CompletionControllerApiSpec {
 
     private final CompletionService completionService;
 

@@ -1,6 +1,7 @@
 package cleanloop.user;
 
 import cleanloop.common.response.ApiResponse;
+import cleanloop.user.controller.api.UserControllerApiSpec;
 import cleanloop.user.dto.UpdateMeRequest;
 import cleanloop.user.dto.UserResponse;
 import jakarta.validation.Valid;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/me")
-public class UserController {
+public class UserController implements UserControllerApiSpec {
 
     private final UserService userService;
 

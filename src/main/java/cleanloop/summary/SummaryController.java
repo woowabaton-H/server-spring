@@ -1,6 +1,7 @@
 package cleanloop.summary;
 
 import cleanloop.common.response.ApiResponse;
+import cleanloop.summary.controller.api.SummaryControllerApiSpec;
 import cleanloop.summary.dto.HomeResponse;
 import cleanloop.summary.dto.MeSummaryResponse;
 import java.time.LocalDate;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class SummaryController {
+public class SummaryController implements SummaryControllerApiSpec {
 
     private final SummaryService summaryService;
 

@@ -2,6 +2,7 @@ package cleanloop.community;
 
 import cleanloop.common.page.PageRequests;
 import cleanloop.common.response.ApiResponse;
+import cleanloop.community.controller.api.CommunityControllerApiSpec;
 import cleanloop.community.dto.CommunityPostDetailResponse;
 import cleanloop.community.dto.CommunityPostSummaryResponse;
 import cleanloop.community.dto.HelpfulResponse;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/community/posts")
-public class CommunityController {
+public class CommunityController implements CommunityControllerApiSpec {
 
     private final CommunityService communityService;
 

@@ -1,5 +1,6 @@
 package cleanloop.category;
 
+import cleanloop.category.controller.api.CategoryControllerApiSpec;
 import cleanloop.category.dto.CategoryResponse;
 import cleanloop.category.dto.CreateCategoryRequest;
 import cleanloop.category.dto.UpdateCategoryRequest;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/categories")
-public class CategoryController {
+public class CategoryController implements CategoryControllerApiSpec {
 
     private final CategoryService categoryService;
 

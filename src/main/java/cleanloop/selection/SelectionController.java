@@ -2,6 +2,7 @@ package cleanloop.selection;
 
 import cleanloop.common.page.PageRequests;
 import cleanloop.common.response.ApiResponse;
+import cleanloop.selection.controller.api.SelectionControllerApiSpec;
 import cleanloop.selection.dto.ExternalViewRequest;
 import cleanloop.selection.dto.ExternalViewResponse;
 import cleanloop.selection.dto.SaveSelectionResponse;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class SelectionController {
+public class SelectionController implements SelectionControllerApiSpec {
 
     private final SelectionService selectionService;
 

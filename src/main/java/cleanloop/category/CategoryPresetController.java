@@ -1,5 +1,6 @@
 package cleanloop.category;
 
+import cleanloop.category.controller.api.CategoryPresetControllerApiSpec;
 import cleanloop.category.dto.CategoryPresetResponse;
 import cleanloop.common.response.ApiResponse;
 import java.util.List;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/category-presets")
-public class CategoryPresetController {
+public class CategoryPresetController implements CategoryPresetControllerApiSpec {
 
     private final CategoryService categoryService;
 
