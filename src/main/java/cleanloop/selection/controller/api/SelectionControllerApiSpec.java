@@ -67,6 +67,10 @@ public interface SelectionControllerApiSpec {
                                                   "isHighlighted": true,
                                                   "priceText": "19,000원대",
                                                   "affiliateText": "일부 제휴",
+                                                  "imageUrl": "https://cdn.cleanloop.example/selections/starter-kit.jpg",
+                                                  "ratingText": "4.8",
+                                                  "reviewCountText": "후기 1,240개",
+                                                  "tags": ["입문용", "가성비", "한 번에 준비"],
                                                   "reason": "세제 종류를 늘리기보다 매주 쓰는 것만 담았어요.",
                                                   "fitFor": "처음 자취를 시작했거나 청소 도구가 거의 없는 사용자",
                                                   "isSaved": false,
@@ -106,6 +110,14 @@ public interface SelectionControllerApiSpec {
                     3. 셀렉션 상세 정보 수신 (제휴 업체 리스트, 가격, 링크 등)
                     4. 상세 페이지 렌더링
                     5. 사용자는 "저장", "외부 보기" 버튼 클릭 가능
+
+                    상세 전용 필드:
+                    - notice: 최종 조건 확인 고지 문구
+                    - checks: 구매나 이용 전 확인할 항목 목록
+                    - providers: 연결된 제공업체 후보
+
+                    목록 응답에는 위 세 필드가 없다. 카드 표시용 imageUrl, ratingText,
+                    reviewCountText, tags는 목록과 상세 모두에 담긴다.
                     """
     )
     @ApiResponses(value = {

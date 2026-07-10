@@ -102,6 +102,62 @@ class SelectionApiTest {
     }
 
     @Test
+    void 목록에_카드_표시용_필드가_담긴다() throws Exception {
+        mockMvc.perform(get("/api/v1/selections"))
+                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data[0].imageUrl")
+                        .value("https://cdn.cleanloop.example/selections/starter-kit.jpg"))
+                .andExpect(jsonPath("$.data[0].ratingText").value("4.8"))
+                .andExpect(jsonPath("$.data[0].reviewCountText").value("후기 1,240개"))
+                .andExpect(jsonPath("$.data[0].tags").value(Matchers.contains("입문용", "가성비", "한 번에 준비")));
+    }
+
+    /** 카드에 필요한 정보라 목록에도 담지만, 판단 근거인 notice와 checks는 상세 전용이다. */
+    @Test
+    void 목록에는_notice와_checks가_없다() throws Exception {
+        mockMvc.perform(get("/api/v1/selections"))
+                .andExpect(jsonPath("$.data[0].notice").doesNotExist())
+                .andExpect(jsonPath("$.data[0].checks").doesNotExist())
+                .andExpect(jsonPath("$.data[0].tags").exists());
+    }
+
+    @Test
+    void 상세에_확인_항목이_순서대로_담긴다() throws Exception {
+        mockMvc.perform(get("/api/v1/selections/bath-soft-start"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.ratingText").value("4.6"))
+                .andExpect(jsonPath("$.data.reviewCountText").value("후기 832개"))
+                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("욕실", "물때")))
+                .andExpect(jsonPath("$.data.checks").value(Matchers.contains(
+                        "대리석 등 약한 소재에는 산성 세제를 쓰지 마세요.",
+                        "사용 중 환기를 유지하세요.")))
+                .andExpect(jsonPath("$.data.notice").exists());
+    }
+
+    @Test
+    void 태그가_sort_order_순으로_반환된다() throws Exception {
+        mockMvc.perform(get("/api/v1/selections/trash-pickup"))
+                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("정기 수거", "구독", "문앞 배출")));
+    }
+
+    @Test
+    void 저장한_셀렉션에도_카드_표시용_필드가_담긴다() throws Exception {
+        mockMvc.perform(get("/api/v1/me/saved-selections"))
+                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data[0].imageUrl").exists())
+                .andExpect(jsonPath("$.data[0].ratingText").value("4.8"))
+                .andExpect(jsonPath("$.data[0].tags", Matchers.hasSize(3)));
+    }
+
+    @Test
+    void 마이_요약의_저장_셀렉션에도_카드_표시용_필드가_담긴다() throws Exception {
+        mockMvc.perform(get("/api/v1/me/summary"))
+                .andExpect(jsonPath("$.data.savedSelections[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data.savedSelections[0].imageUrl").exists())
+                .andExpect(jsonPath("$.data.savedSelections[0].tags", Matchers.hasSize(3)));
+    }
+
+    @Test
     void 목록에는_저장_여부가_담기고_제공업체는_비어_있다() throws Exception {
         mockMvc.perform(get("/api/v1/selections"))
                 // 시드에서 starter-kit만 저장된 상태다

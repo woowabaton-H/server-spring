@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS community_reactions;
 DROP TABLE IF EXISTS community_posts;
 DROP TABLE IF EXISTS saved_selections;
 DROP TABLE IF EXISTS provider_options;
+DROP TABLE IF EXISTS selection_attributes;
 DROP TABLE IF EXISTS selection_items;
 DROP TABLE IF EXISTS completion_logs;
 DROP TABLE IF EXISTS cleaning_categories;
@@ -69,26 +70,44 @@ CREATE INDEX idx_completion_logs_category ON completion_logs(category_id, comple
 
 -- 05-selection.md
 CREATE TABLE selection_items (
-    id              UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
-    slug            VARCHAR(80) NOT NULL UNIQUE,
-    type            VARCHAR(30) NOT NULL,
-    category        VARCHAR(40) NOT NULL,
-    title           VARCHAR(120) NOT NULL,
-    label           VARCHAR(40),
-    price_text      VARCHAR(80),
-    affiliate_text  VARCHAR(40),
-    reason          VARCHAR(1000),
-    fit_for         VARCHAR(500),
-    notice          VARCHAR(500),
-    is_highlighted  BOOLEAN NOT NULL DEFAULT FALSE,
-    external_url    VARCHAR(500),
-    status          VARCHAR(20) NOT NULL DEFAULT 'published',
-    sort_order      INT NOT NULL DEFAULT 0,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id                UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    slug              VARCHAR(80) NOT NULL UNIQUE,
+    type              VARCHAR(30) NOT NULL,
+    category          VARCHAR(40) NOT NULL,
+    title             VARCHAR(120) NOT NULL,
+    label             VARCHAR(40),
+    price_text        VARCHAR(80),
+    affiliate_text    VARCHAR(40),
+    reason            VARCHAR(1000),
+    fit_for           VARCHAR(500),
+    notice            VARCHAR(500),
+    -- 카드 UI에 쓰는 표시 정보. 가격과 같은 이유로 수치가 아니라 문구로 다룬다.
+    image_url         VARCHAR(500),
+    rating_text       VARCHAR(20),
+    review_count_text VARCHAR(40),
+    is_highlighted    BOOLEAN NOT NULL DEFAULT FALSE,
+    external_url      VARCHAR(500),
+    status            VARCHAR(20) NOT NULL DEFAULT 'published',
+    sort_order        INT NOT NULL DEFAULT 0,
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_selection_items_status_category ON selection_items(status, category, is_highlighted, sort_order);
 CREATE INDEX idx_selection_items_type ON selection_items(type);
+
+-- tags와 checks는 문자열 배열이다. H2에 이식 가능한 배열 타입이 없어 자식 테이블로 정규화한다.
+--   kind='tag'   카드에 붙는 짧은 태그
+--   kind='check' 구매 전 확인할 항목 (notice의 배열 버전)
+-- VALUE는 H2 예약어라 컬럼명을 attribute_value로 둔다.
+CREATE TABLE selection_attributes (
+    id                 UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    selection_item_id  UUID NOT NULL REFERENCES selection_items(id),
+    kind               VARCHAR(20) NOT NULL,
+    attribute_value    VARCHAR(200) NOT NULL,
+    sort_order         INT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_selection_attributes_item_kind
+    ON selection_attributes(selection_item_id, kind, sort_order);
 
 CREATE TABLE provider_options (
     id                 UUID DEFAULT RANDOM_UUID() PRIMARY KEY,

@@ -35,17 +35,20 @@ public class SelectionService {
     private final SelectionRepository selectionRepository;
     private final ProviderOptionRepository providerOptionRepository;
     private final SavedSelectionRepository savedSelectionRepository;
+    private final SelectionAttributeRepository attributeRepository;
     private final CurrentUserProvider currentUserProvider;
     private final UserService userService;
 
     public SelectionService(SelectionRepository selectionRepository,
                             ProviderOptionRepository providerOptionRepository,
                             SavedSelectionRepository savedSelectionRepository,
+                            SelectionAttributeRepository attributeRepository,
                             CurrentUserProvider currentUserProvider,
                             UserService userService) {
         this.selectionRepository = selectionRepository;
         this.providerOptionRepository = providerOptionRepository;
         this.savedSelectionRepository = savedSelectionRepository;
+        this.attributeRepository = attributeRepository;
         this.currentUserProvider = currentUserProvider;
         this.userService = userService;
     }
@@ -62,9 +65,7 @@ public class SelectionService {
         String nextCursor = hasNext ? encodeCursor(items.get(items.size() - 1)) : null;
 
         Set<UUID> savedIds = savedSelectionRepository.findSavedItemIds(userId);
-        List<SelectionResponse> responses = items.stream()
-                .map(item -> SelectionResponse.ofListItem(item, savedIds.contains(item.id())))
-                .toList();
+        List<SelectionResponse> responses = toListItems(items, savedIds);
         return new Page(responses, nextCursor);
     }
 
@@ -77,7 +78,30 @@ public class SelectionService {
                 .map(ProviderResponse::from)
                 .toList();
         boolean saved = savedSelectionRepository.findSavedAt(userId, item.id()).isPresent();
-        return SelectionResponse.ofDetail(item, saved, providers);
+        Map<SelectionAttributeKind, List<String>> attributes = attributeRepository.findAllByItemId(item.id());
+
+        return SelectionResponse.ofDetail(
+                item,
+                attributes.getOrDefault(SelectionAttributeKind.TAG, List.of()),
+                saved,
+                attributes.getOrDefault(SelectionAttributeKind.CHECK, List.of()),
+                providers);
+    }
+
+    /**
+     * 태그는 셀렉션마다 조회하지 않고 한 번에 읽어 붙인다.
+     */
+    private List<SelectionResponse> toListItems(List<SelectionItem> items, Set<UUID> savedIds) {
+        List<UUID> itemIds = items.stream().map(SelectionItem::id).toList();
+        Map<UUID, List<String>> tagsByItemId =
+                attributeRepository.findByItemIds(itemIds, SelectionAttributeKind.TAG);
+
+        return items.stream()
+                .map(item -> SelectionResponse.ofListItem(
+                        item,
+                        tagsByItemId.getOrDefault(item.id(), List.of()),
+                        savedIds.contains(item.id())))
+                .toList();
     }
 
     @Transactional
@@ -106,11 +130,11 @@ public class SelectionService {
                 .collect(Collectors.toMap(SelectionItem::id, Function.identity(), (a, b) -> a, LinkedHashMap::new));
 
         // 저장 시각 최신순은 SQL이 정했다. in 절 결과 순서는 보장되지 않으므로 여기서 다시 세운다.
-        return orderedIds.stream()
+        List<SelectionItem> ordered = orderedIds.stream()
                 .map(itemsById::get)
                 .filter(java.util.Objects::nonNull)
-                .map(item -> SelectionResponse.ofListItem(item, true))
                 .toList();
+        return toListItems(ordered, Set.copyOf(orderedIds));
     }
 
     public int countSaved(UUID userId) {

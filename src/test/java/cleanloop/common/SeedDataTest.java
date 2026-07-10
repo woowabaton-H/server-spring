@@ -39,6 +39,7 @@ class SeedDataTest {
         assertThat(countOf("cleaning_categories")).isEqualTo(6);
         assertThat(countOf("completion_logs")).isEqualTo(10);
         assertThat(countOf("selection_items")).isEqualTo(7);
+        assertThat(countOf("selection_attributes")).isEqualTo(28);
         assertThat(countOf("provider_options")).isEqualTo(3);
         assertThat(countOf("saved_selections")).isEqualTo(1);
         assertThat(countOf("community_posts")).isEqualTo(7);

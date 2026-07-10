@@ -32,6 +32,9 @@ public class SelectionRepository {
             rs.getString("reason"),
             rs.getString("fit_for"),
             rs.getString("notice"),
+            rs.getString("image_url"),
+            rs.getString("rating_text"),
+            rs.getString("review_count_text"),
             rs.getBoolean("is_highlighted"),
             rs.getString("external_url"),
             rs.getString("status"),
@@ -41,7 +44,8 @@ public class SelectionRepository {
 
     private static final String COLUMNS = """
             id, slug, type, category, title, label, price_text, affiliate_text,
-            reason, fit_for, notice, is_highlighted, external_url, status, sort_order, created_at
+            reason, fit_for, notice, image_url, rating_text, review_count_text,
+            is_highlighted, external_url, status, sort_order, created_at
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
