@@ -1,5 +1,7 @@
 package cleanloop.common.error;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -53,6 +55,36 @@ class GlobalExceptionHandlerTest {
                         .content("{\"name\": "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void 잘못된_형식의_경로_변수는_400이고_문제_필드를_알려준다() throws Exception {
+        mockMvc.perform(patch("/api/v1/categories/not-a-uuid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cycleDays\": 7}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.error.details.categoryId").exists());
+    }
+
+    /**
+     * Spring 예외 원문에는 내부 타입명이 섞여 있어 클라이언트에 노출하지 않는다.
+     */
+    @Test
+    void 에러_메시지에_내부_타입명이_새지_않는다() throws Exception {
+        mockMvc.perform(patch("/api/v1/categories/not-a-uuid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cycleDays\": 7}"))
+                .andExpect(jsonPath("$.error.message").value(not(containsString("java.lang"))))
+                .andExpect(jsonPath("$.error.message").value(not(containsString("java.util.UUID"))));
+
+        mockMvc.perform(delete("/api/v1/me"))
+                .andExpect(jsonPath("$.error.message").value(not(containsString("Request method"))));
+
+        mockMvc.perform(patch("/api/v1/me")
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("hello"))
+                .andExpect(jsonPath("$.error.message").value(not(containsString("Content-Type 'text/plain'"))));
     }
 
     @Test

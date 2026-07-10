@@ -39,23 +39,41 @@ public class GlobalExceptionHandler {
         return toResponse(ErrorCode.VALIDATION_FAILED, ErrorCode.VALIDATION_FAILED.defaultMessage(), details);
     }
 
-    @ExceptionHandler({
-            MissingServletRequestParameterException.class,
-            MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class
-    })
-    public ResponseEntity<ErrorResponse> handleBadRequest(Exception e) {
-        return toResponse(ErrorCode.INVALID_REQUEST, e.getMessage(), null);
+    /**
+     * 아래 핸들러들은 예외 메시지를 그대로 내보내지 않는다.
+     * Spring의 원문에는 내부 타입명과 스택 사정이 섞여 있어 클라이언트에 노출할 값이 아니다.
+     * 대신 어떤 파라미터가 문제인지만 details에 구조화해 담는다.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException e) {
+        log.debug("Missing request parameter", e);
+        return toResponse(ErrorCode.INVALID_REQUEST, "필수 파라미터가 없습니다.",
+                Map.of(e.getParameterName(), "필수 파라미터입니다."));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.debug("Request parameter type mismatch", e);
+        return toResponse(ErrorCode.INVALID_REQUEST, "파라미터 형식이 올바르지 않습니다.",
+                Map.of(e.getName(), "형식이 올바르지 않습니다."));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
+        log.debug("Unreadable request body", e);
+        return toResponse(ErrorCode.INVALID_REQUEST, "요청 본문을 읽을 수 없습니다.", null);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
-        return toResponse(ErrorCode.METHOD_NOT_ALLOWED, e.getMessage(), null);
+        log.debug("Method not supported", e);
+        return toResponse(ErrorCode.METHOD_NOT_ALLOWED, ErrorCode.METHOD_NOT_ALLOWED.defaultMessage(), null);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
-        return toResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, e.getMessage(), null);
+        log.debug("Media type not supported", e);
+        return toResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, ErrorCode.UNSUPPORTED_MEDIA_TYPE.defaultMessage(), null);
     }
 
     /**
