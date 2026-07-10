@@ -120,7 +120,7 @@ class SelectionApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("프로쉬 세탁조 클리너 250g"))
                 .andExpect(jsonPath("$.data.imageUrl")
-                        .value("/cleanloop/images/selection-frosch-washer-cleaner.png"))
+                        .value("/cleanloop/images/laundry-hanging.jpg"))
                 .andExpect(jsonPath("$.data.tags").value(Matchers.contains("세탁조클리너", "세탁기청소", "냄새제거")));
     }
 

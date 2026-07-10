@@ -151,11 +151,11 @@ class CommunityApiTest {
         mockMvc.perform(get("/api/v1/community/posts").param("type", "qa").param("limit", "100"))
                 .andExpect(jsonPath("$.data[0].id").value(DOC_QA_IMAGE1))
                 .andExpect(jsonPath("$.data[?(@.id == '%s')].imageUrl".formatted(DOC_QA_IMAGE1))
-                        .value(Matchers.hasItem("/cleanloop/images/qna-washer-gasket-mold.png")));
+                        .value(Matchers.hasItem("/cleanloop/images/laundry-hanging.jpg")));
 
         mockMvc.perform(get("/api/v1/community/posts/" + DOC_QA_IMAGE1))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.imageUrl").value("/cleanloop/images/qna-washer-gasket-mold.png"));
+                .andExpect(jsonPath("$.data.imageUrl").value("/cleanloop/images/laundry-hanging.jpg"));
     }
 
     @Test
