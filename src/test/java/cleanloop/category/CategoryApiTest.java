@@ -66,10 +66,11 @@ class CategoryApiTest {
     void 프리셋_목록을_조회한다() throws Exception {
         mockMvc.perform(get("/api/v1/category-presets"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", Matchers.hasSize(7)))
-                .andExpect(jsonPath("$.data[0].key").value("bath"))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(8)))
+                .andExpect(jsonPath("$.data[0].key").value("laundry"))
                 .andExpect(jsonPath("$.data[6].key").value("pet"))
-                .andExpect(jsonPath("$.data[6].cycleDays").value(7));
+                .andExpect(jsonPath("$.data[7].key").value("supplies"))
+                .andExpect(jsonPath("$.data[7].cycleDays").value(14));
     }
 
     @Test
@@ -81,7 +82,7 @@ class CategoryApiTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.name").value("반려동물"))
-                .andExpect(jsonPath("$.data.icon").value("floor"))
+                .andExpect(jsonPath("$.data.icon").value("pet"))
                 .andExpect(jsonPath("$.data.cycleDays").value(7))
                 // 생성 직후에는 방금 완료한 셈이므로 주기만큼 여유가 있다
                 .andExpect(jsonPath("$.data.status.code").value("good"))

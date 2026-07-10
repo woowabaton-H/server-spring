@@ -21,7 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * 댓글/답변 조회·작성과 글 작성 검증.
- * 시드: tip1에 댓글 2건, tip2에 1건, qa1에 답변 2건, qa2에 1건.
+ * 시드: 클라이언트 프로토타입의 tips 4건에 댓글 2건씩, qa 2건에 답변 2건씩.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,7 +29,6 @@ import tools.jackson.databind.ObjectMapper;
 class CommunityCommentApiTest {
 
     private static final String TIP1 = "e0000000-0000-0000-0000-000000000001";
-    private static final String TIP3 = "e0000000-0000-0000-0000-000000000003";
     private static final String QA1 = "e0000000-0000-0000-0000-000000000005";
     private static final String MISSING = "e0000000-0000-0000-0000-0000000000ff";
 
@@ -46,8 +45,8 @@ class CommunityCommentApiTest {
         mockMvc.perform(get("/api/v1/community/posts/" + TIP1 + "/comments"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", Matchers.hasSize(2)))
-                .andExpect(jsonPath("$.data[0].body").value("스퀴지 하나 샀는데 확실히 물때가 덜 생겨요."))
-                .andExpect(jsonPath("$.data[1].body").value("환기를 같이 하니까 곰팡이도 줄었습니다."))
+                .andExpect(jsonPath("$.data[0].body").value("물때 제거제를 매일 쓰는 것보다 물기 제거를 먼저 해보세요."))
+                .andExpect(jsonPath("$.data[1].body").value("거울 얼룩은 마른 극세사 천으로 마무리하면 덜 남습니다."))
                 .andExpect(jsonPath("$.meta.nextCursor").doesNotExist());
     }
 
@@ -63,7 +62,16 @@ class CommunityCommentApiTest {
 
     @Test
     void 댓글이_없는_글은_빈_목록이다() throws Exception {
-        mockMvc.perform(get("/api/v1/community/posts/" + TIP3 + "/comments"))
+        String body = mockMvc.perform(post("/api/v1/community/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"type": "tips", "title": "댓글 없는 글", "tag": "욕실", "body": "본문입니다."}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String postId = objectMapper.readTree(body).get("data").get("id").asText();
+
+        mockMvc.perform(get("/api/v1/community/posts/" + postId + "/comments"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", Matchers.hasSize(0)));
     }

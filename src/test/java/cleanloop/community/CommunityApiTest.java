@@ -23,8 +23,8 @@ import tools.jackson.databind.ObjectMapper;
  * docs/issues/06-community.md 완료 기준 검증.
  *
  * 시드 인기 점수(helpful + saved):
- *   tips: tip1 192, tip2 136, tip3 104, tip4 88  -> 상위 3 문턱값 104
- *   qa:   qa1 110, qa2 67, qa3 49                -> 3건뿐이라 모두 인기
+ *   tips: tip1 192, tip3 176, tip2 147, tip4 129 -> 상위 3 문턱값 147
+ *   qa:   qa1 110, qa2 110, qa3 49               -> 상위 3 문턱값 49
  * 시드 반응: tip1에 도움됨, qa1에 저장.
  */
 @SpringBootTest
@@ -87,8 +87,8 @@ class CommunityApiTest {
                 .andExpect(jsonPath("$.data[0].id").value(TIP1))
                 .andExpect(jsonPath("$.data[0].isPopular").value(true));
 
-        // tip4는 상위 3건 밖(88점)이므로 태그로 좁혀도 비인기다
-        mockMvc.perform(get("/api/v1/community/posts").param("type", "tips").param("tag", "세탁"))
+        // tip4는 상위 3건 밖(129점)이므로 태그로 좁혀도 비인기다
+        mockMvc.perform(get("/api/v1/community/posts").param("type", "tips").param("tag", "바닥"))
                 .andExpect(jsonPath("$.data[0].id").value(TIP4))
                 .andExpect(jsonPath("$.data[0].isPopular").value(false));
     }
@@ -102,7 +102,7 @@ class CommunityApiTest {
         for (JsonNode post : posts) {
             scores.add(post.get("helpfulCount").asInt() + post.get("savedCount").asInt());
         }
-        assertThat(scores).containsExactly(192, 136, 104, 88);
+        assertThat(scores).containsExactly(192, 176, 147, 129);
     }
 
     @Test
@@ -151,7 +151,7 @@ class CommunityApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.postId").value(TIP2))
                 .andExpect(jsonPath("$.data.hasMarkedHelpful").value(true))
-                .andExpect(jsonPath("$.data.helpfulCount").value(97));
+                .andExpect(jsonPath("$.data.helpfulCount").value(105));
     }
 
     @Test
@@ -182,9 +182,9 @@ class CommunityApiTest {
     void 표시하지_않은_도움됨을_취소해도_카운터가_줄지_않는다() throws Exception {
         // tip2에는 반응이 없다
         mockMvc.perform(delete("/api/v1/community/posts/" + TIP2 + "/helpful"))
-                .andExpect(jsonPath("$.data.helpfulCount").value(96));
+                .andExpect(jsonPath("$.data.helpfulCount").value(104));
         mockMvc.perform(delete("/api/v1/community/posts/" + TIP2 + "/helpful"))
-                .andExpect(jsonPath("$.data.helpfulCount").value(96));
+                .andExpect(jsonPath("$.data.helpfulCount").value(104));
     }
 
     @Test
@@ -201,9 +201,9 @@ class CommunityApiTest {
     void 표시와_취소를_반복해도_카운터가_어긋나지_않는다() throws Exception {
         for (int i = 0; i < 3; i++) {
             mockMvc.perform(put("/api/v1/community/posts/" + TIP2 + "/helpful"))
-                    .andExpect(jsonPath("$.data.helpfulCount").value(97));
+                    .andExpect(jsonPath("$.data.helpfulCount").value(105));
             mockMvc.perform(delete("/api/v1/community/posts/" + TIP2 + "/helpful"))
-                    .andExpect(jsonPath("$.data.helpfulCount").value(96));
+                    .andExpect(jsonPath("$.data.helpfulCount").value(104));
         }
     }
 
@@ -224,7 +224,7 @@ class CommunityApiTest {
 
         mockMvc.perform(get("/api/v1/community/posts/" + TIP4))
                 .andExpect(jsonPath("$.data.isSaved").value(true))
-                .andExpect(jsonPath("$.data.savedCount").value(28));
+                .andExpect(jsonPath("$.data.savedCount").value(39));
     }
 
     @Test
@@ -236,7 +236,7 @@ class CommunityApiTest {
 
         assertThat(savedAtOf(second)).isEqualTo(savedAtOf(first));
         mockMvc.perform(get("/api/v1/community/posts/" + TIP4))
-                .andExpect(jsonPath("$.data.savedCount").value(28));
+                .andExpect(jsonPath("$.data.savedCount").value(39));
     }
 
     @Test
@@ -255,18 +255,18 @@ class CommunityApiTest {
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/v1/community/posts/" + TIP4))
-                .andExpect(jsonPath("$.data.savedCount").value(27));
+                .andExpect(jsonPath("$.data.savedCount").value(38));
     }
 
     /** 저장 수가 바뀌면 인기 점수도 함께 움직인다. */
     @Test
     void 저장이_인기_점수에_반영된다() throws Exception {
-        // tip4(88)를 5번 저장할 수는 없으니, 문턱값 아래 tip4가 tip3(104)를 넘지 못함을 확인한다
+        // tip4(129)를 5번 저장할 수는 없으니, 문턱값 아래 tip4가 tip2(147)를 넘지 못함을 확인한다
         mockMvc.perform(put("/api/v1/community/posts/" + TIP4 + "/save")).andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/community/posts").param("type", "tips"))
                 .andExpect(jsonPath("$.data[3].id").value(TIP4))
-                .andExpect(jsonPath("$.data[3].savedCount").value(28))
+                .andExpect(jsonPath("$.data[3].savedCount").value(39))
                 .andExpect(jsonPath("$.data[3].isPopular").value(false));
     }
 

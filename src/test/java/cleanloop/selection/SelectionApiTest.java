@@ -23,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * docs/issues/05-selection.md 완료 기준 검증.
- * 시드: 공개 셀렉션 7종, trash-pickup에 제공업체 3곳, starter-kit은 저장된 상태.
+ * 시드: 공개 셀렉션 9종, 서비스 셀렉션에 제공업체 3곳, downy-odor는 저장된 상태.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,16 +42,16 @@ class SelectionApiTest {
     void 공개된_셀렉션을_모두_반환한다() throws Exception {
         mockMvc.perform(get("/api/v1/selections"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", Matchers.hasSize(7)))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(9)))
                 .andExpect(jsonPath("$.meta.nextCursor").doesNotExist());
     }
 
     @Test
     void 목록의_식별자는_slug다() throws Exception {
         mockMvc.perform(get("/api/v1/selections"))
-                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
-                .andExpect(jsonPath("$.data[0].type").value("kit"))
-                .andExpect(jsonPath("$.data[0].typeLabel").value("키트"));
+                .andExpect(jsonPath("$.data[0].id").value("downy-odor"))
+                .andExpect(jsonPath("$.data[0].type").value("product"))
+                .andExpect(jsonPath("$.data[0].typeLabel").value("용품"));
     }
 
     @Test
@@ -72,11 +72,11 @@ class SelectionApiTest {
             }
         }
         assertThat(ids.subList(0, 3))
-                .containsExactly("starter-kit", "bath-soft-start", "trash-pickup");
+                .containsExactly("downy-odor", "laundrego-bedding", "miso-aircon");
     }
 
     @Test
-    void 특정_카테고리를_요청하면_전체_항목도_함께_반환한다() throws Exception {
+    void 특정_카테고리를_요청하면_해당_카테고리_항목을_반환한다() throws Exception {
         JsonNode selections = readData(mockMvc.perform(get("/api/v1/selections").param("category", "욕실"))
                 .andReturn().getResponse().getContentAsString());
 
@@ -84,32 +84,32 @@ class SelectionApiTest {
         for (JsonNode selection : selections) {
             categories.add(selection.get("category").asText());
         }
-        assertThat(categories).containsOnly("욕실", "전체");
-        assertThat(categories).contains("욕실", "전체");
+        assertThat(categories).containsOnly("욕실");
+        assertThat(categories).contains("욕실");
     }
 
     @Test
     void 카테고리_전체를_요청하면_모든_항목을_반환한다() throws Exception {
         mockMvc.perform(get("/api/v1/selections").param("category", "전체"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(7)));
+                .andExpect(jsonPath("$.data", Matchers.hasSize(9)));
     }
 
     @Test
     void type으로_필터한다() throws Exception {
         mockMvc.perform(get("/api/v1/selections").param("type", "service"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(3)))
                 .andExpect(jsonPath("$.data[*].type").value(Matchers.everyItem(Matchers.is("service"))));
     }
 
     @Test
     void 목록에_카드_표시용_필드가_담긴다() throws Exception {
         mockMvc.perform(get("/api/v1/selections"))
-                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data[0].id").value("downy-odor"))
                 .andExpect(jsonPath("$.data[0].imageUrl")
-                        .value("https://cdn.cleanloop.example/selections/starter-kit.jpg"))
+                        .value("/cleanloop/images/downy.jpg"))
                 .andExpect(jsonPath("$.data[0].ratingText").value("4.8"))
-                .andExpect(jsonPath("$.data[0].reviewCountText").value("후기 1,240개"))
-                .andExpect(jsonPath("$.data[0].tags").value(Matchers.contains("입문용", "가성비", "한 번에 준비")));
+                .andExpect(jsonPath("$.data[0].reviewCountText").value("후기 2,184개"))
+                .andExpect(jsonPath("$.data[0].tags").value(Matchers.contains("세탁 냄새", "수건", "운동복")));
     }
 
     /** 카드에 필요한 정보라 목록에도 담지만, 판단 근거인 notice와 checks는 상세 전용이다. */
@@ -123,27 +123,27 @@ class SelectionApiTest {
 
     @Test
     void 상세에_확인_항목이_순서대로_담긴다() throws Exception {
-        mockMvc.perform(get("/api/v1/selections/bath-soft-start"))
+        mockMvc.perform(get("/api/v1/selections/bath-squeegee"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.ratingText").value("4.6"))
-                .andExpect(jsonPath("$.data.reviewCountText").value("후기 832개"))
-                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("욕실", "물때")))
+                .andExpect(jsonPath("$.data.reviewCountText").value("후기 924개"))
+                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("물때", "물기 제거")))
                 .andExpect(jsonPath("$.data.checks").value(Matchers.contains(
-                        "대리석 등 약한 소재에는 산성 세제를 쓰지 마세요.",
-                        "사용 중 환기를 유지하세요.")))
+                        "고무날 폭과 걸이 방식을 확인하세요.",
+                        "거울 표면에 흠집이 생기지 않게 깨끗한 상태로 쓰세요.")))
                 .andExpect(jsonPath("$.data.notice").exists());
     }
 
     @Test
     void 태그가_sort_order_순으로_반환된다() throws Exception {
-        mockMvc.perform(get("/api/v1/selections/trash-pickup"))
-                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("정기 수거", "구독", "문앞 배출")));
+        mockMvc.perform(get("/api/v1/selections/today-pickup"))
+                .andExpect(jsonPath("$.data.tags").value(Matchers.contains("정기 수거", "문앞")));
     }
 
     @Test
     void 저장한_셀렉션에도_카드_표시용_필드가_담긴다() throws Exception {
         mockMvc.perform(get("/api/v1/me/saved-selections"))
-                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data[0].id").value("downy-odor"))
                 .andExpect(jsonPath("$.data[0].imageUrl").exists())
                 .andExpect(jsonPath("$.data[0].ratingText").value("4.8"))
                 .andExpect(jsonPath("$.data[0].tags", Matchers.hasSize(3)));
@@ -152,7 +152,7 @@ class SelectionApiTest {
     @Test
     void 마이_요약의_저장_셀렉션에도_카드_표시용_필드가_담긴다() throws Exception {
         mockMvc.perform(get("/api/v1/me/summary"))
-                .andExpect(jsonPath("$.data.savedSelections[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data.savedSelections[0].id").value("downy-odor"))
                 .andExpect(jsonPath("$.data.savedSelections[0].imageUrl").exists())
                 .andExpect(jsonPath("$.data.savedSelections[0].tags", Matchers.hasSize(3)));
     }
@@ -160,8 +160,8 @@ class SelectionApiTest {
     @Test
     void 목록에는_저장_여부가_담기고_제공업체는_비어_있다() throws Exception {
         mockMvc.perform(get("/api/v1/selections"))
-                // 시드에서 starter-kit만 저장된 상태다
-                .andExpect(jsonPath("$.data[0].id").value("starter-kit"))
+                // 시드에서 downy-odor만 저장된 상태다
+                .andExpect(jsonPath("$.data[0].id").value("downy-odor"))
                 .andExpect(jsonPath("$.data[0].isSaved").value(true))
                 .andExpect(jsonPath("$.data[0].providers", Matchers.hasSize(0)))
                 .andExpect(jsonPath("$.data[1].isSaved").value(false));
@@ -169,15 +169,14 @@ class SelectionApiTest {
 
     @Test
     void 상세는_제공업체와_고지_문구를_함께_반환한다() throws Exception {
-        mockMvc.perform(get("/api/v1/selections/trash-pickup"))
+        mockMvc.perform(get("/api/v1/selections/today-pickup"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("trash-pickup"))
-                .andExpect(jsonPath("$.data.typeLabel").value("구독 연결"))
+                .andExpect(jsonPath("$.data.id").value("today-pickup"))
+                .andExpect(jsonPath("$.data.typeLabel").value("서비스"))
                 .andExpect(jsonPath("$.data.notice").exists())
-                .andExpect(jsonPath("$.data.providers", Matchers.hasSize(3)))
+                .andExpect(jsonPath("$.data.providers", Matchers.hasSize(1)))
                 .andExpect(jsonPath("$.data.providers[0].name").value("오늘수거"))
-                .andExpect(jsonPath("$.data.providers[0].ratingText").value("4.8"))
-                .andExpect(jsonPath("$.data.providers[2].name").value("클린박스"));
+                .andExpect(jsonPath("$.data.providers[0].ratingText").value("4.9"));
     }
 
     @Test
@@ -189,21 +188,21 @@ class SelectionApiTest {
 
     @Test
     void 셀렉션을_저장한다() throws Exception {
-        mockMvc.perform(put("/api/v1/selections/bath-soft-start/save"))
+        mockMvc.perform(put("/api/v1/selections/bath-squeegee/save"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.selectionId").value("bath-soft-start"))
+                .andExpect(jsonPath("$.data.selectionId").value("bath-squeegee"))
                 .andExpect(jsonPath("$.data.isSaved").value(true))
                 .andExpect(jsonPath("$.data.savedAt").exists());
 
-        mockMvc.perform(get("/api/v1/selections/bath-soft-start"))
+        mockMvc.perform(get("/api/v1/selections/bath-squeegee"))
                 .andExpect(jsonPath("$.data.isSaved").value(true));
     }
 
     @Test
     void 같은_항목을_반복_저장해도_결과가_같다() throws Exception {
-        String first = mockMvc.perform(put("/api/v1/selections/bath-soft-start/save"))
+        String first = mockMvc.perform(put("/api/v1/selections/bath-squeegee/save"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String second = mockMvc.perform(put("/api/v1/selections/bath-soft-start/save"))
+        String second = mockMvc.perform(put("/api/v1/selections/bath-squeegee/save"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         assertThat(savedAtOf(second)).isEqualTo(savedAtOf(first));
@@ -213,10 +212,10 @@ class SelectionApiTest {
 
     @Test
     void 저장을_해제한다() throws Exception {
-        mockMvc.perform(delete("/api/v1/selections/starter-kit/save"))
+        mockMvc.perform(delete("/api/v1/selections/downy-odor/save"))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/v1/selections/starter-kit"))
+        mockMvc.perform(get("/api/v1/selections/downy-odor"))
                 .andExpect(jsonPath("$.data.isSaved").value(false));
         mockMvc.perform(get("/api/v1/me/saved-selections"))
                 .andExpect(jsonPath("$.data", Matchers.hasSize(0)));
@@ -224,9 +223,9 @@ class SelectionApiTest {
 
     @Test
     void 저장되지_않은_항목을_해제해도_204다() throws Exception {
-        mockMvc.perform(delete("/api/v1/selections/floor-easy/save"))
+        mockMvc.perform(delete("/api/v1/selections/floor-roller/save"))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(delete("/api/v1/selections/floor-easy/save"))
+        mockMvc.perform(delete("/api/v1/selections/floor-roller/save"))
                 .andExpect(status().isNoContent());
     }
 
@@ -239,40 +238,40 @@ class SelectionApiTest {
 
     @Test
     void 저장한_셀렉션을_저장_시각_최신순으로_반환한다() throws Exception {
-        mockMvc.perform(put("/api/v1/selections/floor-easy/save")).andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/selections/floor-roller/save")).andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/me/saved-selections"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", Matchers.hasSize(2)))
                 // 방금 저장한 항목이 먼저 온다
-                .andExpect(jsonPath("$.data[0].id").value("floor-easy"))
+                .andExpect(jsonPath("$.data[0].id").value("floor-roller"))
                 .andExpect(jsonPath("$.data[0].isSaved").value(true))
-                .andExpect(jsonPath("$.data[1].id").value("starter-kit"));
+                .andExpect(jsonPath("$.data[1].id").value("downy-odor"));
     }
 
     @Test
     void 저장_상태가_목록_상세_마이에_일관되게_반영된다() throws Exception {
-        mockMvc.perform(put("/api/v1/selections/sink-weekly/save")).andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/selections/kitchen-drain-net/save")).andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/selections/sink-weekly"))
+        mockMvc.perform(get("/api/v1/selections/kitchen-drain-net"))
                 .andExpect(jsonPath("$.data.isSaved").value(true));
         mockMvc.perform(get("/api/v1/selections").param("type", "product"))
-                .andExpect(jsonPath("$.data[?(@.id == 'sink-weekly')].isSaved")
+                .andExpect(jsonPath("$.data[?(@.id == 'kitchen-drain-net')].isSaved")
                         .value(Matchers.hasItem(true)));
         mockMvc.perform(get("/api/v1/me/summary"))
                 .andExpect(jsonPath("$.data.stats.savedSelectionCount").value(2))
-                .andExpect(jsonPath("$.data.savedSelections[0].id").value("sink-weekly"));
+                .andExpect(jsonPath("$.data.savedSelections[0].id").value("kitchen-drain-net"));
     }
 
     @Test
     void 외부_보기_클릭을_기록하고_이동_정보를_반환한다() throws Exception {
-        mockMvc.perform(post("/api/v1/selections/trash-pickup/external-view")
+        mockMvc.perform(post("/api/v1/selections/today-pickup/external-view")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"providerId": "%s"}
                                 """.formatted(PROVIDER_ID)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.selectionId").value("trash-pickup"))
+                .andExpect(jsonPath("$.data.selectionId").value("today-pickup"))
                 .andExpect(jsonPath("$.data.providerId").value(PROVIDER_ID))
                 // 시드에는 외부 URL이 없다. 고지 문구는 그래도 함께 내려준다
                 .andExpect(jsonPath("$.data.externalUrl").doesNotExist())
@@ -281,15 +280,15 @@ class SelectionApiTest {
 
     @Test
     void providerId_없이도_외부_보기를_기록한다() throws Exception {
-        mockMvc.perform(post("/api/v1/selections/starter-kit/external-view"))
+        mockMvc.perform(post("/api/v1/selections/downy-odor/external-view"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.selectionId").value("starter-kit"))
+                .andExpect(jsonPath("$.data.selectionId").value("downy-odor"))
                 .andExpect(jsonPath("$.data.notice").exists());
     }
 
     @Test
     void 다른_셀렉션의_제공업체를_지정하면_404다() throws Exception {
-        mockMvc.perform(post("/api/v1/selections/starter-kit/external-view")
+        mockMvc.perform(post("/api/v1/selections/downy-odor/external-view")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"providerId": "%s"}
@@ -318,8 +317,8 @@ class SelectionApiTest {
             cursor = next.isNull() || next.isMissingNode() ? null : next.asText();
         } while (cursor != null);
 
-        assertThat(collected).hasSize(7).doesNotHaveDuplicates();
-        assertThat(collected.get(0)).isEqualTo("starter-kit");
+        assertThat(collected).hasSize(9).doesNotHaveDuplicates();
+        assertThat(collected.get(0)).isEqualTo("downy-odor");
     }
 
     @Test

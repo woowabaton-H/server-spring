@@ -35,16 +35,16 @@ class SeedDataTest {
     @Test
     void 각_테이블에_시드_데이터가_적재된다() {
         assertThat(countOf("users")).isEqualTo(1);
-        assertThat(countOf("category_presets")).isEqualTo(7);
+        assertThat(countOf("category_presets")).isEqualTo(8);
         assertThat(countOf("cleaning_categories")).isEqualTo(6);
         assertThat(countOf("completion_logs")).isEqualTo(10);
-        assertThat(countOf("selection_items")).isEqualTo(7);
-        assertThat(countOf("selection_attributes")).isEqualTo(28);
+        assertThat(countOf("selection_items")).isEqualTo(9);
+        assertThat(countOf("selection_attributes")).isEqualTo(37);
         assertThat(countOf("provider_options")).isEqualTo(3);
         assertThat(countOf("saved_selections")).isEqualTo(1);
         assertThat(countOf("community_posts")).isEqualTo(7);
         assertThat(countOf("community_reactions")).isEqualTo(2);
-        assertThat(countOf("community_comments")).isEqualTo(6);
+        assertThat(countOf("community_comments")).isEqualTo(12);
         assertThat(countOf("notifications")).isEqualTo(2);
     }
 
