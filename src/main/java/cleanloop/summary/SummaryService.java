@@ -8,6 +8,7 @@ import cleanloop.category.CleaningCategory;
 import cleanloop.category.dto.CategoryResponse;
 import cleanloop.completion.CompletionLogRepository;
 import cleanloop.completion.dto.CompletionLogResponse;
+import cleanloop.selection.SelectionService;
 import cleanloop.summary.dto.HomeResponse;
 import cleanloop.summary.dto.MeSummaryResponse;
 import cleanloop.user.User;
@@ -40,15 +41,18 @@ public class SummaryService {
     private final CompletionLogRepository completionLogRepository;
     private final CategoryStatusService statusService;
     private final UserService userService;
+    private final SelectionService selectionService;
 
     public SummaryService(CategoryRepository categoryRepository,
                           CompletionLogRepository completionLogRepository,
                           CategoryStatusService statusService,
-                          UserService userService) {
+                          UserService userService,
+                          SelectionService selectionService) {
         this.categoryRepository = categoryRepository;
         this.completionLogRepository = completionLogRepository;
         this.statusService = statusService;
         this.userService = userService;
+        this.selectionService = selectionService;
     }
 
     @Transactional(readOnly = true)
@@ -89,14 +93,14 @@ public class SummaryService {
         MeSummaryResponse.Stats stats = new MeSummaryResponse.Stats(
                 monthlyCompletionCount(user.id(), today),
                 categoryRepository.countActiveByUserId(user.id()),
-                0);
+                selectionService.countSaved(user.id()));
 
         return new MeSummaryResponse(
                 MeSummaryResponse.Profile.from(user),
                 stats,
                 weeklyFootprints(user.id(), today),
                 recentLogs(user.id(), timezone),
-                List.of());
+                selectionService.findSaved());
     }
 
     private List<CompletionLogResponse> recentLogs(UUID userId, ZoneId timezone) {

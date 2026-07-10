@@ -1,6 +1,7 @@
 package cleanloop.summary;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -119,8 +120,21 @@ class SummaryApiTest {
                 .andExpect(jsonPath("$.data.stats.monthlyCompletionCount").isNumber());
     }
 
+    /** 시드에서 starter-kit 한 건이 저장된 상태다. */
     @Test
-    void 마이_요약의_저장_셀렉션은_아직_비어_있다() throws Exception {
+    void 마이_요약은_저장한_셀렉션을_반환한다() throws Exception {
+        mockMvc.perform(get("/api/v1/me/summary"))
+                .andExpect(jsonPath("$.data.stats.savedSelectionCount").value(1))
+                .andExpect(jsonPath("$.data.savedSelections", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data.savedSelections[0].id").value("starter-kit"))
+                .andExpect(jsonPath("$.data.savedSelections[0].isSaved").value(true));
+    }
+
+    @Test
+    void 저장을_해제하면_마이_요약에서도_사라진다() throws Exception {
+        mockMvc.perform(delete("/api/v1/selections/starter-kit/save"))
+                .andExpect(status().isNoContent());
+
         mockMvc.perform(get("/api/v1/me/summary"))
                 .andExpect(jsonPath("$.data.stats.savedSelectionCount").value(0))
                 .andExpect(jsonPath("$.data.savedSelections", Matchers.hasSize(0)));
