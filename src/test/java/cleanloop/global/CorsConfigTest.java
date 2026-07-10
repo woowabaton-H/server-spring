@@ -28,4 +28,15 @@ class CorsConfigTest {
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://binuu.vercel.app"))
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, containsString("GET")));
     }
+
+    @Test
+    void allowsVercelPreviewOrigins() throws Exception {
+        mockMvc.perform(options("/api/v1/home")
+                        .header(HttpHeaders.ORIGIN, "https://client-front-lqvu4koo9-chanmins-projects.vercel.app")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                        "https://client-front-lqvu4koo9-chanmins-projects.vercel.app"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, containsString("POST")));
+    }
 }

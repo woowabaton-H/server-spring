@@ -10,19 +10,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    private final String[] allowedOrigins;
+    private final String[] allowedOriginPatterns;
 
-    public CorsConfig(@Value("${cleanloop.cors.allowed-origins}") String[] allowedOrigins) {
-        this.allowedOrigins = Arrays.stream(allowedOrigins)
+    public CorsConfig(@Value("${cleanloop.cors.allowed-origin-patterns}") String[] allowedOriginPatterns) {
+        this.allowedOriginPatterns = Arrays.stream(allowedOriginPatterns)
                 .map(String::trim)
-                .filter(origin -> !origin.isBlank())
+                .filter(pattern -> !pattern.isBlank())
                 .toArray(String[]::new);
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins)
+                .allowedOriginPatterns(allowedOriginPatterns)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders("X-Request-Id")
